@@ -10,7 +10,7 @@ su un display vari valori relativi ad un giro di allenamento in bicicletta,
 come la velocità della bici, il tempo trascorso dall'inizio dell'allenamento e 
 la distanza percorsa. Il ciclocomputer è provvisto anche di un accelerometro che 
 rileva il cambio di altimetria del percorso e di un sensore di temperatura che 
-rileva la temperaturà esterna.
+rileva temperaturà e umidità dell'ambiente in cui ci si trova.
 
 ### Elenco componenti utilizzati all'interno del progetto:
 
@@ -19,6 +19,7 @@ rileva la temperaturà esterna.
 - 1 Sensore Linear Hall
 - 1 Modulo GY-521 (accelerometro)
 - 1 Sensore DHT11 (temperatura e umidità)
+- 1 Potenziometro da 10 kΩ
 - Breadboard
 - Pulsanti
 - Resistenze
