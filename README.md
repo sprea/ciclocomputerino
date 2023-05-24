@@ -5,12 +5,7 @@ Simone Spreafico
 
 ### Descrizione:
 
-Il progetto proposto vuole realizzare un ciclocomputer con un microcontrollore che visualizzi 
-su un display vari valori relativi ad un giro di allenamento in bicicletta, 
-come la velocità della bici, il tempo trascorso dall'inizio dell'allenamento e 
-la distanza percorsa. Il ciclocomputer è provvisto anche di un accelerometro che 
-rileva il cambio di altimetria del percorso e di un sensore di temperatura che 
-rileva temperaturà e umidità dell'ambiente in cui ci si trova.
+Il progetto proposto vuole realizzare un ciclocomputer con un microcontrollore che visualizzi su un display lcd vari valori relativi ad un giro di allenamento in bicicletta, come la velocità della bici, il tempo trascorso dall'inizio dell'allenamento e la distanza percorsa. Il ciclocomputer è provvisto anche di un accelerometro che rileva il cambio di pendenza del percorso e di un sensore di temperatura che rileva temperaturà e umidità dell'ambiente in cui ci si trova.
 
 ### Elenco componenti utilizzati all'interno del progetto:
 
