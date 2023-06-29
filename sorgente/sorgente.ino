@@ -3,8 +3,17 @@
 #include <LiquidCrystal.h>
 #include <Wire.h>
 
+
+#define DHTPIN 2  //Pin sensore temperatura
+#define TIPODHT DHT11  //Tipologia sensore temperatura
+
+
 //oggetto che controlla il modulo GY-521
 MPU6050 accelerometro;
+
+//oggetto che controlla il senosore di temperatura e umidita'
+DHT sensTemperatura(DHTPIN, TIPODHT);
+
 
 void inizializzazioneMCU()
 {
@@ -14,8 +23,8 @@ void inizializzazioneMCU()
   Serial.println("Inizializzazione modulo GY521");
   accelerometro.initialize();
 
-  //Serial.println("Inizializzazione sensore DHT11");
-
+  Serial.println("Inizializzazione sensore DHT11");
+  sensTemperatura.begin();
 
   //Serial.println("Inizializzazione sensore Hall");
   
@@ -45,6 +54,34 @@ void calcoloPendenza()
   //STAMPA SU DISPLAY LCD
 }
 
+float rilevaTemperatura()
+{
+  float temperatura = sensTemperatura.readTemperature();
+  return temperatura;
+}
+
+float rilevaUmidita()
+{
+  float umidita = sensTemperatura.readHumidity();
+  return umidita;
+}
+
+void rilevazioneTemp()
+{
+  float temperatura = rilevaTemperatura();
+  float umidita = rilevaUmidita();
+
+  Serial.println("Rilevazione temperatura e umidità");
+  Serial.print("Temperatura: ");
+  Serial.print(temperatura);
+  Serial.print(" °C, Umidita': ");
+  Serial.print(umidita);
+  Serial.println(" %");
+
+  delay(500);
+  //STAMPA SU LCD
+}
+
 void setup()
 {
   inizializzazioneMCU();
@@ -53,4 +90,5 @@ void setup()
 void loop()
 {
   calcoloPendenza();
+  rilevazioneTemp();
 }
