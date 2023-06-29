@@ -3,10 +3,15 @@
 #include <LiquidCrystal.h>
 #include <Wire.h>
 
+#define VELSERIALE 115200
 
-#define DHTPIN 2  //Pin sensore temperatura
+#define DHTPIN 2  //Pin digitale sensore temperatura
 #define TIPODHT DHT11  //Tipologia sensore temperatura
 
+#define HALLPIN 4  //Pin digitale sensore HALL
+
+//Pin display LCD
+const int rs = 7, en = 8, d4 = 9, d5 = 10, d6 = 11, d7 = 12;
 
 //oggetto che controlla il modulo GY-521
 MPU6050 accelerometro;
@@ -14,11 +19,17 @@ MPU6050 accelerometro;
 //oggetto che controlla il senosore di temperatura e umidita'
 DHT sensTemperatura(DHTPIN, TIPODHT);
 
+//Inizialiazzazione display LCD
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
+//Circonferenza ruota bicicletta espressa in metri
+float circonferenzaRuota = 2.180;
+
 
 void inizializzazioneMCU()
 {
   Wire.begin();
-  Serial.begin(115200);
+  Serial.begin(VELSERIALE);
 
   Serial.println("Inizializzazione modulo GY521");
   accelerometro.initialize();
@@ -26,8 +37,12 @@ void inizializzazioneMCU()
   Serial.println("Inizializzazione sensore DHT11");
   sensTemperatura.begin();
 
-  //Serial.println("Inizializzazione sensore Hall");
-  
+  Serial.println("Inizializzazione sensore Hall");
+  pinMode(HALLPIN, INPUT);
+
+  Serial.println("Inizializzazione display LCD");
+  lcd.begin(16, 2);
+  lcd.print("Avvio...");
 }
 
 void calcoloPendenza()
