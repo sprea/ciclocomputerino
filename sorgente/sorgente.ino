@@ -13,6 +13,9 @@
 //Pin display LCD
 const int rs = 7, en = 8, d4 = 9, d5 = 10, d6 = 11, d7 = 12;
 
+//Pin pulsanti
+const int pulsanteStart = 3, pulsantePausa = 5, pulsanteInfo = 6;
+
 //oggetto che controlla il modulo GY-521
 MPU6050 accelerometro;
 
@@ -24,6 +27,18 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 //Circonferenza ruota bicicletta espressa in metri
 float circonferenzaRuota = 2.180;
+
+int contatoreLettureHall = 0;
+typedef struct tempoAllenamento
+{
+  int ore;
+  int minuti;
+  int secondi;
+}tempoAllenamento;
+unsigned long durata = 0; //variabile che contiene l'output di millis
+int velocita = 0;  //velocita in metri/secondo
+double distanzaPercorsa = 0;
+double velocitaMedia = 0;
 
 
 void inizializzazioneMCU()
@@ -40,12 +55,70 @@ void inizializzazioneMCU()
   Serial.println("Inizializzazione sensore Hall");
   pinMode(HALLPIN, INPUT);
 
+  //leggo i pulsanti di controllo come input
+  pinMode(pulsanteStart, INPUT);
+  pinMode(pulsantePausa, INPUT);
+  pinMode(pulsanteInfo, INPUT);
+
   Serial.println("Inizializzazione display LCD");
   lcd.begin(16, 2);
-  lcd.print("Avvio...");
+  lcd.clear();
+  lcd.print("Avvio Completato");
 }
 
-void calcoloPendenza()
+void calcoloparametriAllenamento()
+{
+  int valoreHall = digitalRead(HALLPIN);
+
+  Serial.println(valoreHall);
+
+  if(valoreHall == LOW)
+    contatoreLettureHall++;
+
+  durata = millis() / 1000; //converto tempo trascorso dall'inizio dello sketch in secondi
+
+  //calcolo velocità
+  velocita = (contatoreLettureHall * circonferenzaRuota) / durata;
+
+  distanzaPercorsa = contatoreLettureHall * circonferenzaRuota;
+
+  velocitaMedia = distanzaPercorsa / durata;
+}
+
+void primaSchermata()
+{
+  calcoloparametriAllenamento();
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print(distanzaPercorsa);
+  lcd.print("Km");
+  lcd.setCursor(8, 0);
+  int pendenza = calcoloPendenza();
+  lcd.print(pendenza);
+  lcd.print("%");
+  lcd.setCursor(0, 1);
+  int velocitaKmOrari = velocita * 3.6;
+  lcd.print(velocita);
+  lcd.print("Km/h");
+  lcd.setCursor(8, 1);
+  float temperatura = rilevaTemperatura();
+  lcd.print(temperatura);
+  lcd.print("°C");
+}
+
+void schermataPausa()
+{
+  lcd.clear();
+  lcd.print("PAUSA");
+}
+
+void secondaSchermata()
+{
+  lcd.clear();
+  lcd.print("Schermata Info");
+}
+
+int calcoloPendenza()
 {
   //valori assi x,y,z accelerometro
   int16_t ax, ay, az;
@@ -60,13 +133,7 @@ void calcoloPendenza()
   if(percentualeRollio < 0)
     percentualeRollio = 0;
 
-  Serial.print("Pendenza: ");
-  Serial.print(percentualeRollio);
-  Serial.println("%");
-
-  delay(500);
-
-  //STAMPA SU DISPLAY LCD
+  return percentualeRollio;
 }
 
 float rilevaTemperatura()
@@ -81,22 +148,6 @@ float rilevaUmidita()
   return umidita;
 }
 
-void rilevazioneTemp()
-{
-  float temperatura = rilevaTemperatura();
-  float umidita = rilevaUmidita();
-
-  Serial.println("Rilevazione temperatura e umidità");
-  Serial.print("Temperatura: ");
-  Serial.print(temperatura);
-  Serial.print(" °C, Umidita': ");
-  Serial.print(umidita);
-  Serial.println(" %");
-
-  delay(500);
-  //STAMPA SU LCD
-}
-
 void setup()
 {
   inizializzazioneMCU();
@@ -104,6 +155,22 @@ void setup()
 
 void loop()
 {
-  calcoloPendenza();
-  rilevazioneTemp();
+  int statopulsanteStart = digitalRead(pulsanteStart);
+  int statopulsantePausa = digitalRead(pulsantePausa);
+  int statopulsanteInfo = digitalRead(pulsanteInfo);
+
+  if(statopulsanteStart == HIGH)
+  {
+    primaSchermata();
+  }
+
+  if(statopulsantePausa == HIGH)
+  {
+    schermataPausa();
+  }
+
+  if(statopulsanteInfo == HIGH)
+  {
+    secondaSchermata();
+  }
 }
