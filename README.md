@@ -20,9 +20,10 @@ Il progetto proposto vuole realizzare un ciclocomputer con un microcontrollore c
 - Resistenze
 - Cavetti dupont
 
+### Schema
+![Schema generale](ciclocomputerino-schema.jpg)
 
-Link a repo: https://github.com/sprea/ciclocomputerino
+### Licenza 
+GNU GENERAL PUBLIC LICENSE version 3 (GPLv3)
 
-Licenza scelta: GNU GENERAL PUBLIC LICENSE version 3 (GPLv3)
 
-Data *indicativa* di presentazione: Luglio 2023
