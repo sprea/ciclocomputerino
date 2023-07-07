@@ -3,6 +3,7 @@
 #include <LiquidCrystal.h>
 #include <Wire.h>
 
+
 #define VELSERIALE 115200
 
 #define DHTPIN 2  //Pin digitale sensore temperatura
@@ -28,19 +29,6 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 //Circonferenza ruota bicicletta espressa in metri
 float circonferenzaRuota = 2.180;
 
-int contatoreLettureHall = 0;
-typedef struct tempoAllenamento
-{
-  int ore;
-  int minuti;
-  int secondi;
-}tempoAllenamento;
-unsigned long durata = 0; //variabile che contiene l'output di millis
-int velocita = 0;  //velocita in metri/secondo
-double distanzaPercorsa = 0;
-double velocitaMedia = 0;
-
-
 void inizializzazioneMCU()
 {
   Wire.begin();
@@ -64,58 +52,7 @@ void inizializzazioneMCU()
   lcd.begin(16, 2);
   lcd.clear();
   lcd.print("Avvio Completato");
-}
-
-void calcoloparametriAllenamento()
-{
-  int valoreHall = digitalRead(HALLPIN);
-
-  Serial.println(valoreHall);
-
-  if(valoreHall == LOW)
-    contatoreLettureHall++;
-
-  durata = millis() / 1000; //converto tempo trascorso dall'inizio dello sketch in secondi
-
-  //calcolo velocità
-  velocita = (contatoreLettureHall * circonferenzaRuota) / durata;
-
-  distanzaPercorsa = contatoreLettureHall * circonferenzaRuota;
-
-  velocitaMedia = distanzaPercorsa / durata;
-}
-
-void primaSchermata()
-{
-  calcoloparametriAllenamento();
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print(distanzaPercorsa);
-  lcd.print("Km");
-  lcd.setCursor(8, 0);
-  int pendenza = calcoloPendenza();
-  lcd.print(pendenza);
-  lcd.print("%");
-  lcd.setCursor(0, 1);
-  int velocitaKmOrari = velocita * 3.6;
-  lcd.print(velocita);
-  lcd.print("Km/h");
-  lcd.setCursor(8, 1);
-  float temperatura = rilevaTemperatura();
-  lcd.print(temperatura);
-  lcd.print("°C");
-}
-
-void schermataPausa()
-{
-  lcd.clear();
-  lcd.print("PAUSA");
-}
-
-void secondaSchermata()
-{
-  lcd.clear();
-  lcd.print("Schermata Info");
+  delay(700);
 }
 
 int calcoloPendenza()
@@ -148,9 +85,71 @@ float rilevaUmidita()
   return umidita;
 }
 
+void schermataIniziale()
+{
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Inizia il giro");
+  lcd.setCursor(0, 1);
+  lcd.print("premendo start!");
+}
+
+void schermataPrincipale()
+{
+  lcd.clear();
+  lcd.print("Principale");
+}
+
+void schermataPausa()
+{
+  lcd.clear();
+  lcd.print("PAUSA");
+}
+
+void schermataInfo()
+{
+  lcd.clear();
+  lcd.print("Schermata Info");
+}
+
+
 void setup()
 {
   inizializzazioneMCU();
+  schermataIniziale();
+}
+
+int scelta = 0;
+bool start = false;
+bool pausa = false;
+bool info = false;
+
+//se scelta = 0 allora schermata iniziale
+//scelta = 1 schermata principale
+//scelta = 2 pausa
+//scelta = 3 schermata info
+
+void sceltaMenu(int scelta)
+{
+  switch (scelta)
+  {
+    case 0:
+      schermataIniziale();
+      Serial.println("Iniziale");
+      break;
+    case 1:
+      schermataPrincipale();
+      Serial.println("Principale");
+      break;
+    case 2:
+      schermataPausa();
+      Serial.println("Pausa");
+      break;
+    case 3:
+      schermataInfo();
+      Serial.println("Info");
+      break;
+  }
 }
 
 void loop()
@@ -159,18 +158,42 @@ void loop()
   int statopulsantePausa = digitalRead(pulsantePausa);
   int statopulsanteInfo = digitalRead(pulsanteInfo);
 
-  if(statopulsanteStart == HIGH)
+  int sceltaPrecedente = scelta;
+  if(statopulsanteStart == HIGH && start == false)
   {
-    primaSchermata();
+    scelta = 1;
+    start = true;
+  }else if(statopulsanteStart == HIGH && start == true)
+  {
+    scelta = 0;
+    start = false;
+    pausa = false;
+    info = false;
   }
 
-  if(statopulsantePausa == HIGH)
+  if(statopulsantePausa == HIGH && start == true && pausa == false)
   {
-    schermataPausa();
+    scelta = 2;
+    pausa = true;
+  }else if(statopulsantePausa == HIGH && start == true && pausa == true)
+  {
+    scelta = 1;
+    pausa = false;
   }
 
-  if(statopulsanteInfo == HIGH)
+  if(statopulsanteInfo == HIGH && start == true && info == false && pausa == false)
   {
-    secondaSchermata();
+    scelta = 3;
+    info = true;
+  }else if(statopulsanteInfo == HIGH && start == true && info == true && pausa == false)
+  {
+    scelta = 1;
+    info = false;
+  }
+
+  if(sceltaPrecedente != scelta)
+  {
+      sceltaMenu(scelta);
+      delay(500);
   }
 }
