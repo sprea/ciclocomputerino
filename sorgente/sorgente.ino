@@ -42,21 +42,30 @@ int secondi = 0;
 int minuti = 0;
 int ore = 0;
 
+unsigned long start = 0;
+unsigned long fine = 0;
+
+//pendenza terreno in percentuale
+int pendenza = 0;
+
 //variabili per ciclocomputer
 //Circonferenza ruota bicicletta espressa in metri
-float circonferenzaRuota = 2.180;
+const float circonferenzaRuota = 2.180;
 
 //contatore rivoluzioni ruota
-unsigned long contatoreRivoluzione = 0;
+int rivoluzioni = 0;
+
+//distanza in metri
+float distanzaM = 0;
 
 //distanza percorsa in km
 float distanza = 0;
 
+//velocita in m/s
+float velocitaMs = 0;
+
 //velocita' espressa in km/h
 float velocita = 0;
-
-//pendenza terreno in percentuale
-int pendenza = 0;
 
 void inizializzazioneMCU()
 {
@@ -71,6 +80,8 @@ void inizializzazioneMCU()
 
   Serial.println("Inizializzazione sensore Hall");
   pinMode(HALLPIN, INPUT);
+
+  pinMode(LED_BUILTIN, OUTPUT);
 
   //leggo i pulsanti di controllo come input
   debStart.attach(pulsanteStart, INPUT);
@@ -169,6 +180,7 @@ void schermataPausa()
 void schermataPrincipale()
 {
   int pendenzaVecchia = pendenza;
+  calcoloParametriAllenamento();
   lcd.setCursor(0, 0);
   lcd.print(distanza);
   lcd.print("Km");
@@ -199,6 +211,25 @@ void schermataInfo()
   lcd.print("%");
 }
 
+void calcoloParametriAllenamento()
+{
+  //start = millis();
+  int statoHall = digitalRead(HALLPIN);
+  if(statoHall == LOW)
+  {
+    rivoluzioni++;
+    //fine = millis();
+    if(rivoluzioni > 0)
+      distanzaM = rivoluzioni * circonferenzaRuota;
+  }else
+  {
+    distanza = distanzaM / 1000;  //distanza in km
+    //unsigned long tempoRivoluzione = fine - start;
+    //velocita = (tempoRivoluzione / 3600000) * circonferenzaRuota / 1000;
+    //fine = start;
+  }
+}
+
 void setup()
 {
   inizializzazioneMCU();
@@ -210,7 +241,7 @@ void loop()
   debStart.update();
   debPausa.update();
   debInfo.update();
-
+  
   if(debStart.fell())
   {
     if(!pausa)
