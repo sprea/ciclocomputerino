@@ -37,6 +37,11 @@ DHT sensTemperatura(DHTPIN, TIPODHT);
 //Inizialiazzazione display LCD
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
+//variabili cronometro
+int secondi = 0;
+int minuti = 0;
+int ore = 0;
+
 //variabili per ciclocomputer
 //Circonferenza ruota bicicletta espressa in metri
 float circonferenzaRuota = 2.180;
@@ -50,6 +55,7 @@ float distanza = 0;
 //velocita' espressa in km/h
 float velocita = 0;
 
+//pendenza terreno in percentuale
 int pendenza = 0;
 
 void inizializzazioneMCU()
@@ -98,6 +104,8 @@ int calcoloPendenza()
 
   if(percentualeRollio < 0)
     percentualeRollio = 0;
+  else if(percentualeRollio > 100)
+    percentualeRollio = 100;
 
   return percentualeRollio;
 }
@@ -112,6 +120,32 @@ float rilevaUmidita()
 {
   float umidita = sensTemperatura.readHumidity();
   return umidita;
+}
+
+void cronometro(unsigned long tempo)
+{
+  unsigned long millisecInsecondi = 1000;
+  unsigned long millisecInminuti = 60000;
+  unsigned long millisecInore = 3600000;
+
+  if (tempo >= 1000) {
+    secondi = tempo / millisecInsecondi % 60;
+    minuti = tempo / millisecInminuti % 60;
+    ore = tempo / millisecInore % 24;
+  }
+
+  lcd.setCursor(0, 1);
+  if(ore < 10)
+    lcd.print("0");
+  lcd.print(ore);
+  lcd.print(":");
+  if(minuti < 10)
+    lcd.print("0");
+  lcd.print(minuti);
+  lcd.print(":");
+  if(secondi < 10)
+    lcd.print("0");
+  lcd.print(secondi);
 }
 
 void schermataIniziale()
@@ -141,13 +175,8 @@ void schermataPrincipale()
   lcd.setCursor(8, 0);
   lcd.print(velocita);
   lcd.print("Km/h");
-  lcd.setCursor(0, 1);
-  unsigned long tempoTotale = millis() / 1000;
-  lcd.print(tempoTotale / 3600);
-  lcd.print(":");
-  lcd.print((tempoTotale % 3600) / 60);
-  lcd.print(":");
-  lcd.print(tempoTotale % 60);
+  unsigned long tempoTotale = millis();
+  cronometro(tempoTotale);
   pendenza = calcoloPendenza();
   if(pendenza != pendenzaVecchia)
     lcd.clear();
