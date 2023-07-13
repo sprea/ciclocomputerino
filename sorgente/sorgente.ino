@@ -42,9 +42,6 @@ int secondi = 0;
 int minuti = 0;
 int ore = 0;
 
-unsigned long start = 0;
-unsigned long fine = 0;
-
 //pendenza terreno in percentuale
 int pendenza = 0;
 
@@ -52,17 +49,29 @@ int pendenza = 0;
 //Circonferenza ruota bicicletta espressa in metri
 const float circonferenzaRuota = 2.180;
 
+//tempo corrente calcolato dall'inizio dell'allenamento
+unsigned long tempoCorrente = 0;
+
+//ultimo stato sensore
+boolean ultimoStatoHall = LOW;
+
+//stato corrente sensore
+boolean statoCorrenteHall = LOW;
+
+//tempo inizio ultima rivoluzione ruota
+unsigned long tempoInizioUltimaRivoluzione = 0;
+
+//tempo di una rivoluzione
+unsigned long tempoRivoluzione = 0;
+
 //contatore rivoluzioni ruota
-int rivoluzioni = 0;
+unsigned long rivoluzioni = 0;
 
 //distanza in metri
-float distanzaM = 0;
+float distanzaMetri = 0;
 
 //distanza percorsa in km
 float distanza = 0;
-
-//velocita in m/s
-float velocitaMs = 0;
 
 //velocita' espressa in km/h
 float velocita = 0;
@@ -184,7 +193,7 @@ void schermataPrincipale()
   lcd.setCursor(0, 0);
   lcd.print(distanza);
   lcd.print("Km");
-  lcd.setCursor(8, 0);
+  lcd.setCursor(7, 0);
   lcd.print(velocita);
   lcd.print("Km/h");
   unsigned long tempoTotale = millis();
@@ -213,21 +222,39 @@ void schermataInfo()
 
 void calcoloParametriAllenamento()
 {
-  //start = millis();
-  int statoHall = digitalRead(HALLPIN);
-  if(statoHall == LOW)
+  tempoCorrente = millis();
+  statoCorrenteHall = debounce(ultimoStatoHall, HALLPIN);
+  if(ultimoStatoHall == LOW && statoCorrenteHall == HIGH)
   {
     rivoluzioni++;
-    //fine = millis();
     if(rivoluzioni > 0)
-      distanzaM = rivoluzioni * circonferenzaRuota;
-  }else
-  {
-    distanza = distanzaM / 1000;  //distanza in km
-    //unsigned long tempoRivoluzione = fine - start;
-    //velocita = (tempoRivoluzione / 3600000) * circonferenzaRuota / 1000;
-    //fine = start;
+      distanzaMetri = rivoluzioni * circonferenzaRuota;
+
+    if(tempoInizioUltimaRivoluzione > 0)
+    {
+      tempoRivoluzione = tempoCorrente - tempoInizioUltimaRivoluzione;
+      velocita = (3600000 / tempoRivoluzione) * circonferenzaRuota / 1000;
+    }
+
+    tempoInizioUltimaRivoluzione = tempoCorrente;
   }
+  distanza = distanzaMetri / 1000;  //distanza in km
+  ultimoStatoHall = statoCorrenteHall;
+
+  if(tempoCorrente >= (tempoInizioUltimaRivoluzione + 10000) && velocita > 0)
+  {
+    velocita = 0; //se non rilevo più il sensore dopo 10 secondi significa che sono fermo
+  }
+}
+
+boolean debounce(boolean ultimo, int pin)
+{
+  boolean corrente = digitalRead(pin);
+  if (ultimo != corrente) {
+    delay(5);
+    corrente = digitalRead(pin);
+  }
+  return corrente;
 }
 
 void setup()
