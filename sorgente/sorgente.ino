@@ -9,11 +9,12 @@
 #define DHTPIN 2  //Pin digitale sensore temperatura
 #define TIPODHT DHT11  //Tipologia sensore temperatura
 
-#define HALLPIN 3  //Pin digitale sensore HALL
+#define REVOLUTIONSENSORPIN 3  //Pin digitale sensore tracking IR
 
 //variabile menu
 //scelta = 1 schermata principale
-//scelta = 2 schermata info
+//scelta = 2 pausa
+//scelta = 3 schermata info
 int scelta = 0;
 bool pausa = false;
 
@@ -41,6 +42,9 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 int secondi = 0;
 int minuti = 0;
 int ore = 0;
+const unsigned long millisecInsecondi = 1000;
+const unsigned long millisecInminuti = 60000;
+const unsigned long millisecInore = 3600000;
 
 //pendenza terreno in percentuale
 int pendenza = 0;
@@ -52,11 +56,11 @@ const float circonferenzaRuota = 2.180;
 //tempo corrente calcolato dall'inizio dell'allenamento
 unsigned long tempoCorrente = 0;
 
-//ultimo stato sensore
-boolean ultimoStatoHall = LOW;
+//ultimo stato sensore IR
+boolean ultimoStato = LOW;
 
-//stato corrente sensore
-boolean statoCorrenteHall = LOW;
+//stato corrente sensore IR
+boolean statoCorrente = LOW;
 
 //tempo inizio ultima rivoluzione ruota
 unsigned long tempoInizioUltimaRivoluzione = 0;
@@ -78,8 +82,8 @@ float velocita = 0;
 
 void inizializzazioneMCU()
 {
-  Wire.begin();
-  Serial.begin(VELSERIALE);
+  Wire.begin(); //inizializza I2C per MPU6050
+  Serial.begin(VELSERIALE); //inizializza seriale
 
   Serial.println("Inizializzazione modulo GY521");
   accelerometro.initialize();
@@ -87,8 +91,8 @@ void inizializzazioneMCU()
   Serial.println("Inizializzazione sensore DHT11");
   sensTemperatura.begin();
 
-  Serial.println("Inizializzazione sensore Hall");
-  pinMode(HALLPIN, INPUT);
+  Serial.println("Inizializzazione sensore IR");
+  pinMode(REVOLUTIONSENSORPIN, INPUT);
 
   pinMode(LED_BUILTIN, OUTPUT);
 
@@ -99,9 +103,6 @@ void inizializzazioneMCU()
   debStart.interval(25);
   debPausa.interval(25);
   debInfo.interval(25);
-//  pinMode(pulsanteStart, INPUT);
-//  pinMode(pulsantePausa, INPUT);
-//  pinMode(pulsanteInfo, INPUT);
 
   Serial.println("Inizializzazione display LCD");
   lcd.begin(16, 2);
@@ -112,24 +113,29 @@ void inizializzazioneMCU()
 
 int calcoloPendenza()
 {
-  //valori assi x,y,z accelerometro
+  //valori accelerazione rilevata da MPU6050 per ogni asse
   int16_t ax, ay, az;
 
-  ax = accelerometro.getAccelerationX();
-  ay = accelerometro.getAccelerationY();
-  az = accelerometro.getAccelerationZ();
+  ax = accelerometro.getAccelerationX();  //accelerazione su asse x
+  ay = accelerometro.getAccelerationY();  //accelerazione su asse y
+  az = accelerometro.getAccelerationZ();  //accelerazione su asse z
 
-  float angoloRollio = atan2(-ay, az) * 180 / PI;
-  int percentualeRollio = tan(angoloRollio * PI / 180) * 100;
+  float angoloRollio = atan2(-ay, az) * 180 / PI; //calcolo angolo (gradi) di rollio del sensore quando mosso
+  int percentualeRollio = tan(angoloRollio * PI / 180) * 100; //percentuale angolo rollio usando tangente dell'angolo in radianti
 
-  if(percentualeRollio < 0)
-    percentualeRollio = 0;
-  else if(percentualeRollio > 100)
+
+  //pendenza massima 100% allora angolo di rollio 45 gradi
+  //pendenza < 0 sto andando in discesa
+
+  if(percentualeRollio > 100)
     percentualeRollio = 100;
+  else if(percentualeRollio < -100)
+    percentualeRollio = -100;
 
   return percentualeRollio;
 }
 
+//rilevamento dati sensore DHT11
 float rilevaTemperatura()
 {
   float temperatura = sensTemperatura.readTemperature();
@@ -144,16 +150,16 @@ float rilevaUmidita()
 
 void cronometro(unsigned long tempo)
 {
-  unsigned long millisecInsecondi = 1000;
-  unsigned long millisecInminuti = 60000;
-  unsigned long millisecInore = 3600000;
-
+  //se è passato 1 sec aggiorno il cronometro
+  //variabile tempo output di millis()
+  
   if (tempo >= 1000) {
     secondi = tempo / millisecInsecondi % 60;
     minuti = tempo / millisecInminuti % 60;
     ore = tempo / millisecInore % 24;
   }
 
+  //mostro cronometro su display LCD
   lcd.setCursor(0, 1);
   if(ore < 10)
     lcd.print("0");
@@ -186,6 +192,7 @@ void schermataPausa()
   lcd.print("in Pausa");
 }
 
+//schermata principale dove sono visibili distanza percorsa, velocità, cronometro e pendenza
 void schermataPrincipale()
 {
   int pendenzaVecchia = pendenza;
@@ -206,6 +213,7 @@ void schermataPrincipale()
   lcd.print("%");
 }
 
+//schermata informazioni aggiuntive dove sono visibili temperatura e umidita dell'ambiente
 void schermataInfo()
 {
   lcd.setCursor(0, 0);
@@ -222,24 +230,24 @@ void schermataInfo()
 
 void calcoloParametriAllenamento()
 {
-  tempoCorrente = millis();
-  statoCorrenteHall = debounce(ultimoStatoHall, HALLPIN);
-  if(ultimoStatoHall == LOW && statoCorrenteHall == HIGH)
+  tempoCorrente = millis(); //prendo il tempo corrente tramite funzione millis
+  statoCorrente = debounce(ultimoStato, REVOLUTIONSENSORPIN);
+  if(ultimoStato == LOW && statoCorrente == HIGH) //ho letto una rivoluzione della ruota
   {
     rivoluzioni++;
     if(rivoluzioni > 0)
-      distanzaMetri = rivoluzioni * circonferenzaRuota;
+      distanzaMetri = rivoluzioni * circonferenzaRuota; //calcolo la distanza in metri usando la ruota
 
-    if(tempoInizioUltimaRivoluzione > 0)
+    if(tempoInizioUltimaRivoluzione > 0)  //controllo che non sia la prima rivoluzione
     {
-      tempoRivoluzione = tempoCorrente - tempoInizioUltimaRivoluzione;
-      velocita = (3600000 / tempoRivoluzione) * circonferenzaRuota / 1000;
+      tempoRivoluzione = tempoCorrente - tempoInizioUltimaRivoluzione;  //tempo di una rivoluzione della ruota
+      velocita = (millisecInore / tempoRivoluzione) * circonferenzaRuota / 1000;  //calcolo velocita in km/h
     }
 
-    tempoInizioUltimaRivoluzione = tempoCorrente;
+    tempoInizioUltimaRivoluzione = tempoCorrente; //aggiorno il tempo dell'ultima rivoluzione registrata
   }
   distanza = distanzaMetri / 1000;  //distanza in km
-  ultimoStatoHall = statoCorrenteHall;
+  ultimoStato = statoCorrente;  //aggiorno ultimo stato registrato dal sensore
 
   if(tempoCorrente >= (tempoInizioUltimaRivoluzione + 10000) && velocita > 0)
   {
@@ -247,6 +255,7 @@ void calcoloParametriAllenamento()
   }
 }
 
+//funzione di debouncing per il sensore IR
 boolean debounce(boolean ultimo, int pin)
 {
   boolean corrente = digitalRead(pin);
@@ -268,28 +277,31 @@ void loop()
   debStart.update();
   debPausa.update();
   debInfo.update();
-  
+
+  //rilevata pressione pulsante di start
   if(debStart.fell())
   {
-    if(!pausa)
+    if(!pausa)  //controllo di non essere in pausa
     {
       lcd.clear();
       scelta = 1;
     }
   }
 
+  //rilevata pressione pulsante di pausa
   if(debPausa.fell())
   {
     scelta = 2;
     pausa = !pausa;
     schermataPausa();
-    if(pausa == false)
+    if(!pausa)  //uscito dalla schermata pausa torno su quella principale
     {
       scelta = 1;
       lcd.clear();
     }
   }
 
+  //rilevata pressione pulsante di pausa
   if(debInfo.fell())
   {
     if(!pausa)
