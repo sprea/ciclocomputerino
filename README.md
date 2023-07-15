@@ -11,13 +11,14 @@ Il progetto proposto vuole realizzare un ciclocomputer con un microcontrollore c
 
 - 1 Elegoo UNO R3
 - 1 Display LCD 1602
-- 1 Sensore Linear Hall
+- 1 Sensore Tracking IR (KY-033)
 - 1 Modulo GY-521 (accelerometro)
 - 1 Sensore DHT11 (temperatura e umidità)
 - 1 Potenziometro da 10 kΩ
-- Breadboard
-- Pulsanti
-- Resistenze
+- 1 Breadboard 830 punti
+- 1 Breadboard 400 punti
+- 3 Pulsanti
+- Resistenze (10kΩ e 100Ω)
 - Cavetti dupont
 
 ### Schema
