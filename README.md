@@ -24,12 +24,15 @@ Il progetto proposto vuole realizzare un ciclocomputer con un microcontrollore c
 ### Schema
 ![Schema generale](ciclocomputerino-schema.jpg)
 
-### Immagini
+### Schema Elettrico
+![Schema elettrico](ciclocomputerino-schema-elettrico.jpg)
+
+### Immagini Prototipo
 
 #### Schermata Avvio
-Mostrata al primo avvio del ciclocomputer
+Schermata visualizzata al primo avvio del ciclocomputer
 
-![Schermata avvio](./fotografie/schermata iniziale.jpg)
+![Schermata avvio](fotografie/schermata iniziale.jpg)
 
 #### Schermata Principale
 Nella prima riga del display LCD vengono mostrate distanza percorsa in kilometri
@@ -37,9 +40,9 @@ e velocità in kilometri orari. Nella seconda riga viene mostrato un cronometro 
 registra il tempo trascorso dell'allenamento e la pendenza del percorso espressa
 come percentuale.
 
-![Schermata principale 1](./fotografie/schermata principale.jpg)
+![Schermata principale 1](fotografie/schermata principale.jpg)
 
-![Schermata principale 2](./fotografie/schermata principale 2.jpg)
+![Schermata principale 2](fotografie/schermata principale 2.jpg)
 
 #### Schermata Pausa
 Se premuto il pulsante di pausa, il ciclocomputer va in uno stato di pausa dove 
@@ -51,9 +54,9 @@ non registra i valori di allenamento e interrompe il cronometro.
 In questa schermata vengono mostrati i dati rilevati dal sensore DHT11 ovvero 
 temperatura in gradi e umidità espressa in percentuale.
 
-![Schermata informazioni](./fotografie/schermata info.jpg)
+![Schermata informazioni](fotografie/schermata info.jpg)
 
-### Licenza 
+### Licenza
 GNU GENERAL PUBLIC LICENSE version 3 (GPLv3)
 
 
