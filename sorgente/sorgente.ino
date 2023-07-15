@@ -11,12 +11,7 @@
 
 #define REVOLUTIONSENSORPIN 3  //Pin digitale sensore tracking IR
 
-//variabile menu
-//scelta = 1 schermata principale
-//scelta = 2 pausa
-//scelta = 3 schermata info
-int scelta = 0;
-bool pausa = false;
+void(* resetFunc) (void) = 0; //funzione reset software per la board
 
 //Pin display LCD
 const int rs = 7, en = 8, d4 = 9, d5 = 10, d6 = 11, d7 = 12;
@@ -38,6 +33,15 @@ DHT sensTemperatura(DHTPIN, TIPODHT);
 //Inizialiazzazione display LCD
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
+//variabile menu
+//scelta = 1 schermata principale
+//scelta = 2 pausa
+//scelta = 3 schermata info
+int scelta = 0;
+bool pausa = false;
+bool start = false;
+bool info = false;
+
 //variabili cronometro
 int secondi = 0;
 int minuti = 0;
@@ -45,6 +49,8 @@ int ore = 0;
 const unsigned long millisecInsecondi = 1000;
 const unsigned long millisecInminuti = 60000;
 const unsigned long millisecInore = 3600000;
+unsigned long tempoInizioCronometro = 0;
+unsigned long tempoInPausa = 0; //tempo in cui rimango in pausa
 
 //pendenza terreno in percentuale
 int pendenza = 0;
@@ -195,6 +201,7 @@ void schermataPausa()
 //schermata principale dove sono visibili distanza percorsa, velocità, cronometro e pendenza
 void schermataPrincipale()
 {
+  tempoInizioCronometro = millis() - tempoInPausa;  //aggiorno il tempo del cronometro togliendo la pausa
   int pendenzaVecchia = pendenza;
   calcoloParametriAllenamento();
   lcd.setCursor(0, 0);
@@ -203,8 +210,7 @@ void schermataPrincipale()
   lcd.setCursor(7, 0);
   lcd.print(velocita);
   lcd.print("Km/h");
-  unsigned long tempoTotale = millis();
-  cronometro(tempoTotale);
+  cronometro(tempoInizioCronometro);
   pendenza = calcoloPendenza();
   if(pendenza != pendenzaVecchia)
     lcd.clear();
@@ -253,6 +259,7 @@ void calcoloParametriAllenamento()
   {
     velocita = 0; //se non rilevo più il sensore dopo 10 secondi significa che sono fermo
   }
+  
 }
 
 //funzione di debouncing per il sensore IR
@@ -285,29 +292,48 @@ void loop()
     {
       lcd.clear();
       scelta = 1;
+      start = !start;
+    }
+
+    if(!start)
+    {
+      schermataIniziale();
+      resetFunc();
     }
   }
 
   //rilevata pressione pulsante di pausa
   if(debPausa.fell())
   {
-    scelta = 2;
-    pausa = !pausa;
-    schermataPausa();
-    if(!pausa)  //uscito dalla schermata pausa torno su quella principale
+    if(start)
     {
-      scelta = 1;
-      lcd.clear();
+      scelta = 2;
+      pausa = !pausa;
+      schermataPausa();
+      if(!pausa)  //uscito dalla schermata pausa torno su quella principale
+      {
+        scelta = 1;
+        lcd.clear();
+      }
     }
   }
 
   //rilevata pressione pulsante di pausa
   if(debInfo.fell())
   {
-    if(!pausa)
+    if(start)
     {
-      scelta = 3;
-      lcd.clear();
+      if(!pausa)
+      {
+        scelta = 3;
+        lcd.clear();
+        info = !info;
+        if(info)
+        {
+          scelta = 1;
+          lcd.clear();
+        }
+      }
     }
   }
 
@@ -316,7 +342,8 @@ void loop()
     case 1:
       schermataPrincipale();
       break;
-    case 2: 
+    case 2:
+      tempoInPausa = millis() - tempoInizioCronometro; //calcolo il tempo in pausa
       break;
     case 3:
       schermataInfo();
