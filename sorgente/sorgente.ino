@@ -145,12 +145,20 @@ int calcoloPendenza()
 float rilevaTemperatura()
 {
   float temperatura = sensTemperatura.readTemperature();
+  if(isnan(temperatura))
+  {
+    return -1;
+  }
   return temperatura;
 }
 
 float rilevaUmidita()
 {
   float umidita = sensTemperatura.readHumidity();
+  if(isnan(umidita))
+  {
+    return -1;
+  }
   return umidita;
 }
 
@@ -225,13 +233,24 @@ void schermataInfo()
   lcd.setCursor(0, 0);
   float temperatura = rilevaTemperatura();
   float umidita = rilevaUmidita();
-  lcd.print("Temp:");
-  lcd.print(temperatura);
-  lcd.print(" gradi");
-  lcd.setCursor(0, 1);
-  lcd.print("Umidita:");
-  lcd.print(umidita);
-  lcd.print("%");
+  if(temperatura == -1)
+  {
+    Serial.println("Errore lettura temperatura");
+    lcd.print("Errore lettura temperatura");
+  }else if(umidita == -1)
+  {
+    Serial.println("Errore lettura umidita'");
+    lcd.print("Errore lettura umidita'");
+  }else
+  {
+    lcd.print("Temp:");
+    lcd.print(temperatura);
+    lcd.print(" gradi");
+    lcd.setCursor(0, 1);
+    lcd.print("Umidita:");
+    lcd.print(umidita);
+    lcd.print("%");
+  }
 }
 
 void calcoloParametriAllenamento()
@@ -240,6 +259,7 @@ void calcoloParametriAllenamento()
   statoCorrente = debounce(ultimoStato, REVOLUTIONSENSORPIN);
   if(ultimoStato == LOW && statoCorrente == HIGH) //ho letto una rivoluzione della ruota
   {
+    digitalWrite(LED_BUILTIN, HIGH);  //accendo led sulla board
     rivoluzioni++;
     if(rivoluzioni > 0)
       distanzaMetri = rivoluzioni * circonferenzaRuota; //calcolo la distanza in metri usando la ruota
@@ -259,7 +279,7 @@ void calcoloParametriAllenamento()
   {
     velocita = 0; //se non rilevo più il sensore dopo 10 secondi significa che sono fermo
   }
-  
+  digitalWrite(LED_BUILTIN, LOW); //spengo led sulla board
 }
 
 //funzione di debouncing per il sensore IR
