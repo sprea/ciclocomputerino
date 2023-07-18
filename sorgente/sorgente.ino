@@ -304,7 +304,7 @@ void loop()
   debInfo.update();
 
   //rilevata pressione pulsante di start
-  if(debStart.fell())
+  if(debStart.rose())
   {
     if(!pausa)  //controllo di non essere in pausa
     {
@@ -321,7 +321,7 @@ void loop()
   }
 
   //rilevata pressione pulsante di pausa
-  if(debPausa.fell())
+  if(debPausa.rose())
   {
     if(start)
     {
@@ -336,8 +336,8 @@ void loop()
     }
   }
 
-  //rilevata pressione pulsante di pausa
-  if(debInfo.fell())
+  //rilevata pressione pulsante di info
+  if(debInfo.rose())
   {
     if(start)
     {
@@ -345,12 +345,12 @@ void loop()
       {
         scelta = 3;
         lcd.clear();
-        info = !info;
         if(info)
         {
           scelta = 1;
           lcd.clear();
         }
+        info = !info;
       }
     }
   }
