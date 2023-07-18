@@ -120,15 +120,13 @@ void inizializzazioneMCU()
 int calcoloPendenza()
 {
   //valori accelerazione rilevata da MPU6050 per ogni asse
-  int16_t ax, ay, az;
-
-  ax = accelerometro.getAccelerationX();  //accelerazione su asse x
+  int ay, az;
+  
   ay = accelerometro.getAccelerationY();  //accelerazione su asse y
   az = accelerometro.getAccelerationZ();  //accelerazione su asse z
-
-  float angoloRollio = atan2(-ay, az) * 180 / PI; //calcolo angolo (gradi) di rollio del sensore quando mosso
-  int percentualeRollio = tan(angoloRollio * PI / 180) * 100; //percentuale angolo rollio usando tangente dell'angolo in radianti
-
+  
+  float angoloRollio = atan2(ay, az); //calcolo arcotangente di accelerazione assi y e z per trovare l'angolo di rollio (in radianti)
+  int percentualeRollio = tan(angoloRollio) * 100; //calcolo tangente dell'angolo per trovare la pendenza in percentuale
 
   //pendenza massima 100% allora angolo di rollio 45 gradi
   //pendenza < 0 sto andando in discesa
