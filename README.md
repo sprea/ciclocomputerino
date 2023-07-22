@@ -21,6 +21,13 @@ Il progetto proposto vuole realizzare un ciclocomputer con un microcontrollore c
 - Resistenze (10kΩ e 100Ω)
 - Cavetti dupont
 
+### Librerie software utilizzate
+- [LiquidCrystal](https://github.com/arduino-libraries/LiquidCrystal)
+- [Adafruit Sensor](https://github.com/adafruit/Adafruit_Sensor)
+- [Bounce2](https://github.com/thomasfredericks/Bounce2)
+- [DHT Sensor Library](https://github.com/adafruit/DHT-sensor-library)
+- [MPU6050](https://github.com/electroniccats/mpu6050)
+
 ### Schema
 ![Schema generale](ciclocomputerino-schema.jpg)
 
